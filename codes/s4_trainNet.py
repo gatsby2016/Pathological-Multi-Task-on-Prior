@@ -2,6 +2,7 @@ import os
 import time
 import numpy as np
 import argparse
+import random
 from sklearn.metrics import roc_curve, auc
 
 import torch
@@ -9,74 +10,68 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim
 import torch.utils.data
-from torchvision import transforms
-from utils import config, segclsData
-from utils.util import AverageMeter, intersectionAndUnionGPU #,poly_learning_rate
+from utils import myConfig, mySegClsData
+from utils.myUtil import AverageMeter, intersectionAndUnionGPU, poly_learning_rateV2
 from utils.pspnet import PSPNet
 
 
 def get_parser():
-    parser = argparse.ArgumentParser(description='PyTorch Semantic Segmentation')
+    parser = argparse.ArgumentParser(description='MT (Segmentation & Classification) on prior by PyTorch')
     parser.add_argument('--config', type=str, default='Params.yaml', help='config file')
     parser.add_argument('opts', help='see Params.yaml for all options', default=None, nargs=argparse.REMAINDER)
     args = parser.parse_args()
-    assert args.config is not None
-    cfg = config.load_cfg_from_cfg_file(args.config)
+    assert args.config is not None, "Please provide config file for Params."
+    cfg = myConfig.load_cfg_from_cfg_file(args.config)
     if args.opts is not None:
-        cfg = config.merge_cfg_from_list(cfg, args.opts)
+        cfg = myConfig.merge_cfg_from_list(cfg, args.opts)
     return cfg
 
 
 def main_worker(args):
+    print(args.__dict__)
+    os.environ['CUDA_VISIBLE_DEVICES'] = args.gpu
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed(args.seed)
+
+    train_data = mySegClsData.SCdataset(args.train_root, spc='train')
+    train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
+    val_data = mySegClsData.SCdataset(args.val_root, spc='val')
+    val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
+
+    print("Classification Classes: {}; Seg Classes: {}".format(args.cls_classes, args.seg_classes))
+    # TODO: need to check PSPNet model
     model = PSPNet(layers=args.layers, seg_classes=args.seg_classes, cls_classes= args.cls_classes, zoom_factor=args.zoom_factor,
-                   branchSeg = args.branch_S, ProbTo = args.SegTo, BatchNorm=nn.BatchNorm2d)
+                   branchSeg=args.branch_S, ProbTo=args.SegTo, BatchNorm=nn.BatchNorm2d)
 
-    # modules_ori = [model.layer0, model.layer1, model.layer2, model.layer3, model.layer4]
-    # modules_new = [model.ppm, model.cls, model.aux]
-    # params_list = []
-    # for module in modules_ori:
-    #     params_list.append(dict(params=module.parameters(), lr=args.base_lr))
-    # for module in modules_new:
-    #     params_list.append(dict(params=module.parameters(), lr=args.base_lr * 10))
-
-    print("Classes: {}".format(args.cls_classes))
+    if len(args.gpu) > 1:
+        model = torch.nn.DataParallel(model).cuda()
+    else:
+        model.cuda()
     print(model)
-    model.cuda()
 
-    criterion = nn.CrossEntropyLoss(ignore_index=args.ignore_label)
-    # optimizer = torch.optim.SGD(model.parameters(), lr=args.base_lr, momentum=args.momentum, weight_decay=args.weight_decay)
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.base_lr)
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step, gamma=0.5)
+    criterion = nn.CrossEntropyLoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.base_lr, momentum=args.momentum, weight_decay=args.decay)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=args.base_lr)
+    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step, gamma=0.5)
+    # scheduler.step()
 
-    # net.load_state_dict(torch.load('/media/yann/FILE/Kidney/Yan/Ablation_Study/ResNet40_First/model/resnet_params_0.pkl'))
     if args.weight:
         checkpoint = torch.load(args.weight)
         model.load_state_dict(checkpoint['state_dict'])
 
     if args.resume:
-        # checkpoint = torch.load(args.resume)
         checkpoint = torch.load(args.resume, map_location=lambda storage, loc: storage.cuda())
         args.start_epoch = checkpoint['epoch']
         model.load_state_dict(checkpoint['state_dict'])
         optimizer.load_state_dict(checkpoint['optimizer'])
 
-    mean = [0.8106, 0.5949, 0.8088]
-    std = [0.1635, 0.2139, 0.1225]
-    train_transform = transforms.Compose([transforms.ToTensor(),
-                                          transforms.Normalize(mean=mean, std=std)])
-
-    train_data = segclsData.SCdataset(args.train_root, transform=train_transform)
-    train_loader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.workers)
-    val_data = segclsData.SCdataset(args.val_root, transform=train_transform)
-    val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
-
-
     for epoch in range(args.start_epoch, args.epochs):
-        scheduler.step()
-        epoch_log = epoch + 1
+        poly_learning_rateV2(optimizer, epoch, args.epochs, args.base_lr, power=args.power)
+        print('Current LR:', optimizer.param_groups[0]['lr'])
+        # TODO: check train function
         train(train_loader, model, criterion, optimizer, epoch, args)
-        filename = args.save_path + '/epoch_' + str(epoch_log) + '.pth'
-        torch.save({'epoch': epoch_log, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, filename)
         # validate2(val_loader, model, args)
 
 
@@ -163,6 +158,8 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
             mAcc = np.mean(accuracy_class)
             allAcc = sum(intersection_meter.sum) / (sum(target_meter.sum) + 1e-10)
             print('Segmentation Result at epoch [{}/{}]: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}.'.format(epoch+1, args.epochs, mIoU, mAcc, allAcc))
+    filename = os.path.join(args.save_path, 'epoch_' + str(epoch) + '.pth')
+    torch.save({'epoch': epoch, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, filename)
 
 
 def validate(val_loader, model, args):

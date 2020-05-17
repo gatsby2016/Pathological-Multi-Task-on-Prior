@@ -37,6 +37,11 @@ def poly_learning_rate(base_lr, curr_iter, max_iter, power=0.9):
     return lr
 
 
+def poly_learning_rateV2(optimizer, epoch, MAX_EPOCHES, INIT_LR, power=0.9):
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = round(INIT_LR * np.power( 1 - (epoch) / MAX_EPOCHES,power), 8)
+
+
 def intersectionAndUnion(output, target, K, ignore_index=255):
     # 'K' classes, output and target sizes are N or N * L or N * H * W, each value in range 0 to K - 1.
     assert (output.ndim in [1, 2, 3])

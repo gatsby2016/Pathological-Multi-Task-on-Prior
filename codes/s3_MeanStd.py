@@ -1,6 +1,3 @@
-# coding: utf-8
-# scripts for computing mean and std
-# from __future__ import print_function
 import numpy as np
 import random
 import os
@@ -8,13 +5,13 @@ import cv2
 import argparse
 import glob
 
-#%% define mean and std compution function
+
 def ComputeMeanStd(imagename):
     img = cv2.imread(imagename)
-    img = img[:,:, (2,1,0)] # BGR to RGB
+    img = img[:, :, (2, 1, 0)] # BGR to RGB
     arr = np.array(img)/255.
-    mean_vals = np.mean(arr, (0,1))
-    std_vals = np.std(arr, (0,1)) # Compute the mean  and std along the specified axis 0,1.
+    mean_vals = np.mean(arr, (0, 1))
+    std_vals = np.std(arr, (0, 1)) # Compute the mean  and std along the specified axis 0,1.
     return mean_vals, std_vals
 
 # define compution function for filelist
@@ -38,14 +35,9 @@ def GetArgs():
     parser.add_argument('--part', type=int, default=1, choices=[1, 10, 100, 1000,10000],
                         help='1/Part of len(files), have 1, 10, 100, 1000, 10000 choices')
     parser.add_argument('-P', '--path', type=str,
-                        default=['/home/cyyan/projects/CaSoGP/data/train/benign_Tran/',
-                                 '/home/cyyan/projects/CaSoGP/data/train/malignant_Tran/'
-                                 ], help='Img path1')
-    parser.add_argument('-S', '--savepath', type=str, default='../result/MeanStd.npz',
+                        default=['/home/cyyan/projects/MToPrior/data/mt2patch/train/'], help='Img path1')
+    parser.add_argument('-S', '--savepath', type=str, default='../results/mt2patchMeanStd.npz',
                         help='Path to save the MeanStd value')
-    # parser.add_argument('--multi_img', action='store_true', default=True,
-    #                     help='use multi images or single image')
-
     args = parser.parse_args()
     return args
 
@@ -57,12 +49,8 @@ if __name__ == '__main__':
     Allmean = []
     Allstd = []
     for path in args.path:
-        # filelist = os.listdir(path)
-        filelist = glob.glob(path + '*.png')
-
-        # files = []
-        # [files.append(f[:-9]+'.png') for f in filelist]
-        # filelist = files
+        filelist = glob.glob(path + '*_anno_*.bmp')
+        filelist = [i.replace('_anno_', '_') for i in filelist]
 
         random.shuffle(filelist)
         nums = len(filelist)//args.part # randomly selected 1/part data for compution
@@ -76,13 +64,7 @@ if __name__ == '__main__':
     print("normStd = {}".format(NormStd))
     print('transforms.Normalize({}, {})'.format(NormMean, NormStd))
 
-    np.savez(args.savepath, NormMean = NormMean, NormStd = NormStd)
-    ######################################## load the npz data
-    # npzfile = np.load('MeanStd.npz')
-    # Mean, Std = npzfile['NormMean'], npzfile['NormStd']
-#%%
+    np.savez(args.savepath, NormMean=NormMean, NormStd=NormStd)
 
-# 2019.6.10
-# normMean = [0.8106 0.5949 0.8088]
-# normStd = [0.1635 0.2139 0.1225]
-# transforms.Normalize([0.8106 0.5949 0.8088], [0.1635 0.2139 0.1225])
+    # npzfile = np.load(args.savepath)
+    # Mean, Std = npzfile['NormMean'], npzfile['NormStd']

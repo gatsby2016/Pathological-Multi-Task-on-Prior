@@ -12,8 +12,8 @@ import torch.nn.parallel
 import torch.utils.data
 from torchvision import transforms
 
-from utils import config, segclsData
-from utils.util import AverageMeter, intersectionAndUnionGPU #,poly_learning_rate
+from utils import config, mySegClsData
+from utils.myUtil import AverageMeter, intersectionAndUnionGPU #,poly_learning_rate
 from utils.pspnet import PSPNet
 
 
@@ -110,7 +110,7 @@ def main():
     train_transform = transforms.Compose([transforms.ToTensor(),
                                           transforms.Normalize(mean=mean, std=std)])
 
-    val_data = segclsData.SCdataset(args.val_root, transform=train_transform)
+    val_data = mySegClsData.SCdataset(args.val_root, transform=train_transform)
     val_loader = torch.utils.data.DataLoader(val_data, batch_size=args.batch_size, shuffle=False, num_workers=args.workers)
 
     model = PSPNet(layers=args.layers, seg_classes=args.seg_classes, cls_classes= args.cls_classes, zoom_factor=args.zoom_factor,
