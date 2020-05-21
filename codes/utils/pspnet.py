@@ -29,7 +29,7 @@ class PPM(nn.Module):
 
 class PSPNet(nn.Module):
     def __init__(self, layers=50, bins=(1, 2, 3, 6), dropout=0.1, seg_classes=2, cls_classes=2, zoom_factor=8,
-                 branchSeg =True, ProbTo = True, BatchNorm=nn.BatchNorm2d, pretrained=False):
+                 branchSeg =True, ProbTo=True, BatchNorm=nn.BatchNorm2d, pretrained=False):
         super(PSPNet, self).__init__()
         assert layers in [50, 101, 152]
         assert 2048 % len(bins) == 0
@@ -109,25 +109,22 @@ class PSPNet(nn.Module):
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
-        x_tmp = self.layer4(x) # x_tmp size is: [batch, channel, H/8, W/8]
+        x_tmp = self.layer4(x)  # x_tmp size is: [batch, channel, H/8, W/8]
 
         if self.branchSeg:
-            x_seg = self.ppm(x_tmp)
-            x_seg_tmp = self.cls(x_seg)
-            if self.zoom_factor != 1:
+            x_seg_tmp = self.cls(self.ppm(x_tmp))  # low resolution segmentation
+            if self.zoom_factor != 1: # high resolution segmentation
                 x_seg = F.interpolate(x_seg_tmp, size=(h, w), mode='bilinear', align_corners=True)
 
         if self.ProbTo:
             x_soft = F.softmax(x_seg_tmp, dim=1)
-            prob = x_soft[:,1,:,:].unsqueeze(dim = 1) # prob size is: [batch, H/8, W/8]
+            prob = x_soft[:, 1, :, :].unsqueeze(dim=1)  # prob size is: [batch, H/8, W/8]
             # prob = mask.unsqueeze(dim = 1).float()
             x_tmp = torch.mul(x_tmp, prob)
             # x_tmp = [x_tmp[:,channel,:,:].mul(prob) for channel in range(2048)]
 
-
         x_classifier = self.classifier(x_tmp)
         x_classifier = self.fc(x_classifier.view(x_classifier.size(0), -1))
-
 
         if self.branchSeg:
             return x_seg, x_classifier

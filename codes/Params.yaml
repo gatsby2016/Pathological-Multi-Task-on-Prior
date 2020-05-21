@@ -20,7 +20,7 @@ MODEL:
 
 OPTIM:
   batch_size: 16  # batch size for training
-  epochs: 200
+  epochs: 500
   base_lr: 0.001
   lr_step: 10
   power: 0.9
@@ -28,15 +28,11 @@ OPTIM:
   decay: 0.0001
 
 TRAIN:
+  seg_weight: 1
   HyValidation: False
   branch_S: True
   SegTo: False
-  seg_weight: 1
-  save_path: /home/cyyan/projects/MToPrior/models/
+  save_path: /home/cyyan/projects/MToPrior/models/MTwoP # 111 corresponding to True, True, True on params above.
+  log_dir: /home/cyyan/projects/MToPrior/results/logs
   weight: #/home/cyyan/projects/CaSoGP/model_Para/epoch_92.pth
   resume:  # path to latest checkpoint (default: none)
-
-TEST:
-  scales: [1.0]  # evaluation scales, ms as [0.5, 0.75, 1.0, 1.25, 1.5, 1.75]
-  has_prediction: False  # has prediction already or not
-  model_path:

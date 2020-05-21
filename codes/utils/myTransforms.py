@@ -396,9 +396,12 @@ class RandomOrder(RandomTransforms):
 class RandomChoice(RandomTransforms):
     """Apply single transformation randomly picked from a list
     """
-    def __call__(self, img, mask):
+    def __call__(self, img, mask=None):
         t = random.choice(self.transforms)
-        return t(img, mask)
+        if mask is None:
+            return t(img)
+        else:
+            return t(img, mask)
 
 
 class RandomCrop(object):

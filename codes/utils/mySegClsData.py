@@ -37,7 +37,8 @@ class SCdataset(data.Dataset):
         img = Image.open(imagename)
         mask = Image.open(maskname)
         if self.spc is 'train':
-            img, mask = self.morphpro(self.basicpro(img, mask))
+            img, mask = self.basicpro(img, mask)
+            img, mask = self.morphpro(img, mask)
             img = self.tensorrpro(self.colorpro(img))
         else:
             img = self.tensorrpro(img)
@@ -51,7 +52,7 @@ class SCdataset(data.Dataset):
         # mask = cv2.resize(mask,(40,40))
         mask = np.array(mask)
         mask[mask>1] = 1
-        mask = Image.fromarray(mask)
+        # mask = Image.fromarray(mask)
         return img, mask, label  # only feature to use 40*40
 
     def __len__(self):
