@@ -162,8 +162,9 @@ def train(train_loader, model, criterion, optimizer, epoch, writer, args):
             allAcc = sum(intersection_meter.sum) / (sum(target_meter.sum) + 1e-10)
             print('Segmentation Result at epoch [{}/{}]: mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}.'.format(epoch+1, args.epochs, mIoU, mAcc, allAcc))
 
-    filename = os.path.join(args.save_path, 'epoch_' + str(epoch) + '.pth')
-    torch.save({'epoch': epoch, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, filename)
+    filename = os.path.join(args.save_path, 'epoch_' + str(epoch) + '.pkl')
+    # torch.save({'epoch': epoch, 'state_dict': model.state_dict(), 'optimizer': optimizer.state_dict()}, filename)
+    torch.save(model.state_dict(), filename)
 
 
 def validate(val_loader, model, epoch, writer, args):
