@@ -1,1 +1,1 @@
-tensorboard --logdir ../results/logs --bind_all
+tensorboard --logdir ../results/ --bind_all

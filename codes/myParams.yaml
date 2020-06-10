@@ -1,0 +1,39 @@
+CKPTS:
+  task: 'MTonP'  #'singleCls' or 'singleSeg' or 'MTwoP' or 'MTonP'
+
+  modelckpts: '../models'
+  resultpath: '../results'
+  configs: 'params_setting.txt'
+
+
+TRAIN:
+  lossAlpha: 1
+  HyValidation: False
+
+  restore:
+  sync_bn: False  # adopt sync_bn or not
+#  aux_weight: 0.4
+
+
+CommonSettings:
+  epochs: 500
+  batch_size: 16
+  base_lr: 0.002
+
+  gpu: '0'
+  seed: 2020
+  workers: 8  # data loader workers
+
+
+DATA:
+  train_root: '/home/cyyan/projects/MToPrior/data/mt2patch/train.txt'
+  val_root: '/home/cyyan/projects/MToPrior/data/mt2patch/test.txt'
+  segCls: 2
+  clsCls: 2
+
+
+Optims:
+  lr_step: 10
+  power: 0.9
+  decay: 0.0001
+  momentum: 0.9

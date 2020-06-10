@@ -13,13 +13,13 @@ import torch.utils.data
 from torchvision import transforms
 
 from utils import config, mySegClsData
-from utils.pspnet import PSPNet
+from utils.myMTNet import PSPNet
 import tqdm
 
 def get_parser():
     parser = argparse.ArgumentParser(description='PyTorch Semantic Segmentation')
-    parser.add_argument('--config', type=str, default='Params.yaml', help='config file')
-    parser.add_argument('opts', help='see Params.yaml for all options', default=None, nargs=argparse.REMAINDER)
+    parser.add_argument('--config', type=str, default='myParams.yaml', help='config file')
+    parser.add_argument('opts', help='see myParams.yaml for all options', default=None, nargs=argparse.REMAINDER)
     args = parser.parse_args()
     assert args.config is not None
     cfg = config.load_cfg_from_cfg_file(args.config)

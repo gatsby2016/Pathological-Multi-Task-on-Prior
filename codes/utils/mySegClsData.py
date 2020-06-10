@@ -24,8 +24,9 @@ class SCdataset(data.Dataset):
                                                    myTransforms.AutoRandomRotation()])  # above: randomly selecting one
         self.morphpro = myTransforms.RandomElastic(alpha=2, sigma=0.06)
         self.colorpro = myTransforms.Compose([myTransforms.ColorJitter(brightness=(0.8, 1.2), contrast=(0.8, 1.2)),
-                                              myTransforms.RandomChoice([myTransforms.ColorJitter(saturation=(0.8, 1.2),hue=0.2),
-                                                                         myTransforms.HEDJitter(theta=0.03)])
+                                              myTransforms.RandomChoice([
+                                                  myTransforms.ColorJitter(saturation=(0.8, 1.2), hue=0.2),
+                                                  myTransforms.HEDJitter(theta=0.03)])
                                               ])
         self.tensorrpro = myTransforms.Compose([myTransforms.ToTensor(),  # operated on image
                                                 myTransforms.Normalize([0.786, 0.5087, 0.7840], [0.1534, 0.2053, 0.1132])
@@ -42,18 +43,11 @@ class SCdataset(data.Dataset):
             img = self.tensorrpro(self.colorpro(img))
         else:
             img = self.tensorrpro(img)
-        # img = cv2.imread(imagename, cv2.IMREAD_COLOR)  # BGR 3 channel ndarray wiht shape H * W * 3
-        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # convert cv2 read image from BGR order to RGB order
-        # img = np.float32(img/255)
-        # mask = cv2.imread(maskname, cv2.IMREAD_GRAYSCALE)  # GRAY 1 channel ndarray with shape H * W
 
-        # if self.transform is not None:
-        #     img = self.transform(img)
-        # mask = cv2.resize(mask,(40,40))
         mask = np.array(mask)
-        mask[mask>1] = 1
+        mask[mask > 1] = 1
         # mask = Image.fromarray(mask)
-        return img, mask, label  # only feature to use 40*40
+        return img, mask, label
 
     def __len__(self):
         return len(self.lists)

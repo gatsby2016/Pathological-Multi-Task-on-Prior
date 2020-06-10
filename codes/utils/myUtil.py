@@ -1,10 +1,14 @@
 import os
 import numpy as np
 from PIL import Image
+import argparse
+import json
 
 import torch
 from torch import nn
 import torch.nn.init as initer
+
+from utils import myConfig
 
 
 class AverageMeter(object):
@@ -162,3 +166,32 @@ def colorize(gray, palette):
     color = Image.fromarray(gray.astype(np.uint8)).convert('P')
     color.putpalette(palette)
     return color
+
+
+def get_parser():
+    parser = argparse.ArgumentParser(description='MT (Segmentation & Classification) on prior by PyTorch')
+    parser.add_argument('--config', type=str, default='myParams.yaml', help='config file')
+    parser.add_argument('opts', help='see myParams.yaml for all options', default=None, nargs=argparse.REMAINDER)
+    args = parser.parse_args()
+    assert args.config is not None, "Please provide config file for myParams."
+    cfg = myConfig.load_cfg_from_cfg_file(args.config)
+    if args.opts is not None:
+        cfg = myConfig.merge_cfg_from_list(cfg, args.opts)
+
+    if not os.path.exists(os.path.join(cfg.resultpath, cfg.task)):
+        os.mkdir(os.path.join(cfg.resultpath, cfg.task))
+    with open(os.path.join(cfg.resultpath, cfg.task, cfg.configs), 'w') as f:
+        json.dump(cfg, f, indent=2)
+
+    return cfg
+
+
+def de_transform(mean, std, tensor):
+    mean = torch.as_tensor(mean, dtype=torch.float32, device=tensor.device)
+    std = torch.as_tensor(std, dtype=torch.float32, device=tensor.device)
+    tensor.mul_(std[:, None, None]).add_(mean[:, None, None])
+    return tensor
+
+
+if __name__ == '__main__':
+    pass

@@ -36,7 +36,7 @@ def Crop5Patch(img, size):
     crop_left = int(round((image_width - crop_width) / 2.))
     center = img.crop((crop_left, crop_top, crop_left + crop_width, crop_top + crop_height))
 
-    return (tl, tr, bl, br, center)
+    return tl, tr, bl, br, center
 
 
 if __name__ == "__main__":
