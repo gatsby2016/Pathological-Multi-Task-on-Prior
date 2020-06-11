@@ -3,6 +3,23 @@ import numpy as np
 import numbers
 from PIL import Image
 from glob import glob
+import matplotlib.pyplot as plt
+
+
+def check_image(path='../data/mt2/*_anno.bmp'):
+    imglists = glob(path)
+
+    for index in range(len(imglists)):
+        maskname = imglists[index]
+        img = Image.open(maskname.replace('_anno.bmp', '.bmp'))
+        mask = Image.open(maskname)
+        mask = np.array(mask)
+        mask[mask > 1] = 1
+        plt.subplot(121)
+        plt.imshow(img)
+        plt.subplot(122)
+        plt.imshow(mask)
+        plt.show()
 
 
 def Crop5Patch(img, size):
