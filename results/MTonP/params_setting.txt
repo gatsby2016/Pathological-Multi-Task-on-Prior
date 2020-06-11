@@ -5,7 +5,7 @@
   "configs": "params_setting.txt",
   "lossAlpha": 1,
   "HyValidation": false,
-  "restore": null,
+  "restore": "499.pkl",
   "sync_bn": false,
   "epochs": 500,
   "batch_size": 16,
