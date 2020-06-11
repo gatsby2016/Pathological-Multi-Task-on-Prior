@@ -10,7 +10,7 @@ TRAIN:
   lossAlpha: 1
   HyValidation: False
 
-  restore:
+  restore: '499.pkl'
   sync_bn: False  # adopt sync_bn or not
 #  aux_weight: 0.4
 

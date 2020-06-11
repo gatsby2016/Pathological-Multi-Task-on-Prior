@@ -1,12 +1,17 @@
 import os
 import numpy as np
-from PIL import Image
 import argparse
 import json
+from tqdm import tqdm
+from PIL import Image
+import cv2
 
 import torch
 from torch import nn
 import torch.nn.init as initer
+import torch.nn.functional as F
+
+from sklearn.metrics import roc_curve, auc
 
 from utils import myConfig
 
@@ -186,11 +191,98 @@ def get_parser():
     return cfg
 
 
-def de_transform(mean, std, tensor):
+def de_transform(tensor, mean, std):
     mean = torch.as_tensor(mean, dtype=torch.float32, device=tensor.device)
     std = torch.as_tensor(std, dtype=torch.float32, device=tensor.device)
     tensor.mul_(std[:, None, None]).add_(mean[:, None, None])
     return tensor
+
+
+def independent_evaluation(val_loader, model, args, GEN=False):
+    print('>>>>>>>>>>>>>>>> Start Independent Evaluation or Inference >>>>>>>>>>>>>>>>')
+    intersection_meter = AverageMeter()
+    union_meter = AverageMeter()
+    target_meter = AverageMeter()
+    correct_meter = AverageMeter()
+    nums_meter = AverageMeter()
+    TP = AverageMeter()
+    TPFP = AverageMeter()
+
+    real = np.array([])
+    score = np.array([])
+
+    model.eval()
+    with torch.no_grad():
+        for i, (input, mask, label) in tqdm(enumerate(val_loader)):
+            input = input.cuda()
+            label = label.cuda()
+            mask = mask.cuda().long()
+            # mask = mask.cuda()  # .long()
+            # input = torch.mul(input, mask.unsqueeze(dim=1).float())
+
+            if args.task == 'singleCls':
+                pre_cls = model(input)
+                # pre_classifier = model(input, mask.resize_((input.size(0), 40,40)))
+
+            elif args.task == 'singleSeg':
+                pre_seg = model(input)
+
+            else:
+                pre_seg, pre_cls = model(input)
+
+            if args.task != 'singleCls':
+                intersection, union, target = intersectionAndUnionGPU(pre_seg.max(1)[1], mask, args.segCls)
+                intersection_meter.update(intersection.cpu().numpy())
+                union_meter.update(union.cpu().numpy())
+                target_meter.update(target.cpu().numpy())
+
+                if GEN:
+                    if not os.path.exists(os.path.join(args.resultpath, args.task, 'GenPred')):
+                        os.mkdir(os.path.join(args.resultpath, args.task, 'GenPred'))
+                    probs = F.softmax(pre_seg, dim=1)[:, 1, :, :]
+                    img = de_transform(input, [0.786, 0.5087, 0.7840], [0.1534, 0.2053, 0.1132])
+                    for one in range(probs.size(0)):
+                        pro = np.uint8(255 * probs[one, ...].squeeze().cpu().numpy())
+                        probmap = cv2.applyColorMap(pro, cv2.COLORMAP_JET)
+                        gt = np.uint8(255 * mask[one, ...].squeeze().cpu().numpy())
+                        im = np.uint8(255 * img[one, ...].squeeze().cpu().numpy()).transpose(1, 2, 0)
+                        cv2.imwrite(os.path.join(args.resultpath, args.task,
+                                                 'GenPred', str(i*args.batch_size+one)+'_pre.png'), probmap)
+                        cv2.imwrite(os.path.join(args.resultpath, args.task,
+                                                 'GenPred', str(i*args.batch_size+one)+'_gt.png'), gt)
+                        cv2.imwrite(os.path.join(args.resultpath, args.task,
+                                                 'GenPred', str(i*args.batch_size+one)+'_img.png'), im)
+
+            if args.task != 'singleSeg':
+                prediction = torch.argmax(F.softmax(pre_cls, dim=1), 1)
+                correct_meter.update((prediction == label).sum().item())
+                TP.update(((prediction == 1) & (label == 1)).sum().item())
+                TPFP.update((prediction == 1).sum().item())
+
+                nums_meter.update(input.size(0))
+                score = np.concatenate((score, F.softmax(pre_cls, dim=1)[:, 1].cpu().numpy()), axis=0)
+                real = np.concatenate((real, label.cpu().numpy()), axis=0)
+
+    if args.task != 'singleSeg':
+        fpr,tpr, _ = roc_curve(real, score, pos_label=1)
+        AUC = auc(fpr, tpr)
+        specific = (correct_meter.sum - TP.sum) / (real == 0).sum()
+        recall = TP.sum / (real == 1).sum()
+        precision = TP.sum / TPFP.sum
+
+        Acc = correct_meter.sum / nums_meter.sum
+        print(f'Classification Result Acc/AUC/Precision/Recall/SPC '
+              f'{Acc:.4f}/{AUC:.4f}/{precision:.4f}/{recall:.4f}/{specific:.4f}.')
+
+    if args.task != 'singleCls':
+        iou_class = intersection_meter.sum / (union_meter.sum + 1e-10)
+        accuracy_class = intersection_meter.sum / (target_meter.sum + 1e-10)
+        for i in range(args.segCls):
+            print(f'Class_{i} Result: iou/accuracy {iou_class[i]:.4f}/{accuracy_class[i]:.4f}.')
+        print('Segmentation Val Result mIoU/mAcc/allAcc {:.4f}/{:.4f}/{:.4f}.'
+              .format(np.mean(iou_class), np.mean(accuracy_class),
+                      (sum(intersection_meter.sum) / (sum(target_meter.sum) + 1e-10))))
+    print('<<<<<<<<<<<<<<<<< End Independent Evaluation or Inference<<<<<<<<<<<<<<<<<')
 
 
 if __name__ == '__main__':
