@@ -1377,8 +1377,12 @@ class AutoRandomRotation(object):
             If int, it is used for all channels respectively.
     """
 
-    def __init__(self, resample=False, expand=True, center=None, fill=0):
-        self.degrees = random.choice([0, 90, 180, 270])
+    def __init__(self, degree=None, resample=False, expand=True, center=None, fill=0):
+        if degree is None:
+            self.degrees = random.choice([0, 90, 180, 270])
+        else:
+            assert degree in [0, 90, 180, 270], 'degree must in [0, 90, 180, 270]'
+            self.degrees = degree
 
         self.resample = resample
         self.expand = expand
