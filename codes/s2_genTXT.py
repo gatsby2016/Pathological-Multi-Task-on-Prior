@@ -23,7 +23,7 @@ if __name__ == '__main__':
     print(info)
     print(len(info))
 
-    txt_path = '/home/cyyan/projects/MToPrior/data/mt2patch/test.txt'
-    imgdir = '/home/cyyan/projects/MToPrior/data/mt2patch/test/'
+    txt_path = '/home/cyyan/projects/MToPrior/data/mt2patchAugb/test.txt'
+    imgdir = '/home/cyyan/projects/MToPrior/data/mt2patchAugb/test/'
 
     gen_txt(imgdir, txt_path, info)

@@ -1,25 +1,8 @@
 import os
-import numpy as np
 import numbers
 from PIL import Image
 from glob import glob
 import matplotlib.pyplot as plt
-
-
-def check_image(path='../data/mt2/*_anno.bmp'):
-    imglists = glob(path)
-
-    for index in range(len(imglists)):
-        maskname = imglists[index]
-        img = Image.open(maskname.replace('_anno.bmp', '.bmp'))
-        mask = Image.open(maskname)
-        mask = np.array(mask)
-        mask[mask > 1] = 1
-        plt.subplot(121)
-        plt.imshow(img)
-        plt.subplot(122)
-        plt.imshow(mask)
-        plt.show()
 
 
 def Crop5Patch(img, size):
@@ -56,15 +39,33 @@ def Crop5Patch(img, size):
     return tl, tr, bl, br, center
 
 
+def basic_offline_augment(img):
+    from torchvision import transforms
+
+    rotation90 = transforms.RandomRotation(degrees=[90, 90])
+    rotation180 = transforms.RandomRotation(degrees=[180, 180])
+    rotation270 = transforms.RandomRotation(degrees=[270, 270])
+    r90img = rotation90(img)
+    r180img = rotation180(img)
+    r270img = rotation270(img)
+
+    from torchvision.transforms import functional as F
+    himg = F.hflip(img)
+    vimg = F.vflip(img)
+
+    return img, r90img, r180img, r270img, himg, vimg
+
+
 if __name__ == "__main__":
     imgsize = 320
     path = '/home/cyyan/projects/MToPrior/data/mt2/'
     spc = 'train'
     namelists = glob(path + spc + '*.bmp')
 
-    if not os.path.exists(path.replace('mt2', 'mt2patch/'+spc)):
-        os.mkdir(path.replace('mt2', 'mt2patch/'+spc))
+    if not os.path.exists(path.replace('mt2', 'mt2patchAugb/'+spc)):
+        os.mkdir(path.replace('mt2', 'mt2patchAugb/'+spc))
 
+    basicAug = True
     for name in namelists:
         print(name)
         img = Image.open(name)
@@ -72,4 +73,15 @@ if __name__ == "__main__":
 
         for ind in range(len(imglists)):
             pimg = imglists[ind]
-            pimg.save(name.replace('mt2', 'mt2patch/'+spc).replace('.bmp', '_'+str(ind)+'.bmp'))
+
+            if basicAug:
+                augimgs = basic_offline_augment(pimg)
+
+                for j in range(len(augimgs)):
+                    aug = augimgs[j]
+                    # plt.subplot('23'+str(j+1))
+                    # plt.imshow(aug)
+                    aug.save(name.replace('mt2', 'mt2patchAugb/'+spc).replace('.bmp', '_'+str(ind)+'_'+str(j)+'.bmp'))
+                # plt.show()
+            else:
+                pimg.save(name.replace('mt2', 'mt2patch/' + spc).replace('.bmp', '_' + str(ind) + '.bmp'))
