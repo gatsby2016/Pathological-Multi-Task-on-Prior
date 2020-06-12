@@ -51,10 +51,3 @@ class SCdataset(data.Dataset):
 
     def __len__(self):
         return len(self.lists)
-
-
-def deTransform(mean, std, tensor):
-    mean = torch.as_tensor(mean, dtype=torch.float32, device=tensor.device)
-    std = torch.as_tensor(std, dtype=torch.float32, device=tensor.device)
-    tensor.mul_(std[:, None, None]).add_(mean[:, None, None])
-    return tensor
