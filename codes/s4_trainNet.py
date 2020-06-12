@@ -143,7 +143,7 @@ def train(loader, model, optimizer, criterion, epoch, writer, args):
               f'********Remain******** {remain_time} ********_Loss_******** {loss_meter.val:.4f}.')
 
     writer.add_scalar('loss', loss_meter.sum / loss_meter.count, epoch)
-    if args.task == 'MTwoP' or 'MTonP':
+    if args.task == 'MTwoP' or args.task == 'MTonP':
         writer.add_scalar('Only Seg loss', seg_loss_meter.sum / seg_loss_meter.count, epoch)
         writer.add_scalar('Only Cls loss', cls_loss_meter.sum / cls_loss_meter.count, epoch)
 
@@ -231,7 +231,7 @@ def validate(val_loader, model, criterion, epoch, writer, args):
                 real = np.concatenate((real, label.cpu().numpy()), axis=0)
 
     writer.add_scalar('loss', loss_meter.sum / loss_meter.count, epoch)
-    if args.task == 'MTwoP' or 'MTonP':
+    if args.task == 'MTwoP' or args.task == 'MTonP':
         writer.add_scalar('Only Seg loss', seg_loss_meter.sum / seg_loss_meter.count, epoch)
         writer.add_scalar('Only Cls loss', cls_loss_meter.sum / cls_loss_meter.count, epoch)
 
