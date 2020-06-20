@@ -1,10 +1,8 @@
 import torch.utils.data as data
-import torch
 from PIL import Image
-import glob
-import cv2
 import numpy as np
 from utils import myTransforms
+from utils.colorNorm import color_transfer
 
 
 class SCdataset(data.Dataset):
@@ -19,15 +17,16 @@ class SCdataset(data.Dataset):
         self.lists = lists
         self.spc = spc
 
-        self.basicpro = myTransforms.RandomChoice([myTransforms.RandomHorizontalFlip(p=1),
-                                                   myTransforms.RandomVerticalFlip(p=1),
-                                                   myTransforms.AutoRandomRotation()])  # above: randomly selecting one
+        # self.basicpro = myTransforms.RandomChoice([myTransforms.RandomHorizontalFlip(p=1),
+        #                                            myTransforms.RandomVerticalFlip(p=1),
+        #                                            myTransforms.AutoRandomRotation()])  # above: randomly select one
         self.morphpro = myTransforms.RandomElastic(alpha=2, sigma=0.06)
         self.colorpro = myTransforms.Compose([myTransforms.ColorJitter(brightness=(0.8, 1.2), contrast=(0.8, 1.2)),
                                               myTransforms.RandomChoice([
                                                   myTransforms.ColorJitter(saturation=(0.8, 1.2), hue=0.2),
                                                   myTransforms.HEDJitter(theta=0.03)])
                                               ])
+        # self.colorNorm = myTransforms.Lambda(lambda img: color_transfer('utils/reference.png', img))
         self.tensorrpro = myTransforms.Compose([myTransforms.ToTensor(),  # operated on image
                                                 myTransforms.Normalize([0.786, 0.5087, 0.7840], [0.1534, 0.2053, 0.1132])
                                                 ])
@@ -38,10 +37,13 @@ class SCdataset(data.Dataset):
         img = Image.open(imagename)
         mask = Image.open(maskname)
         if self.spc is 'train':
-            img, mask = self.basicpro(img, mask)
+            # img, mask = self.basicpro(img, mask)
             img, mask = self.morphpro(img, mask)
-            img = self.tensorrpro(self.colorpro(img))
+            img = self.colorpro(img)
+            # img = self.colorNorm(img)
+            img = self.tensorrpro(img)
         else:
+            # img = self.colorNorm(img)
             img = self.tensorrpro(img)
 
         mask = np.array(mask)

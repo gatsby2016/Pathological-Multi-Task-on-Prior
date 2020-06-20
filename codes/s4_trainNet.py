@@ -46,8 +46,9 @@ def main(args):
         print('####################Loading model...', args.restore)
 
     criterion = nn.CrossEntropyLoss().cuda()
-    optimizer = torch.optim.SGD(net.parameters(), lr=args.base_lr, momentum=args.momentum, weight_decay=args.decay)
-    # optimizer = torch.optim.Adam(net.parameters(), lr=args.base_lr)
+    # optimizer = torch.optim.SGD(net.parameters(), lr=args.base_lr, momentum=args.momentum, weight_decay=args.decay)
+    optimizer = torch.optim.Adam(net.parameters(), lr=args.base_lr, weight_decay=args.decay)
+    # scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step, gamma=0.5)
 
     if not os.path.exists(os.path.join(args.modelckpts, args.task)):
         os.mkdir(os.path.join(args.modelckpts, args.task))

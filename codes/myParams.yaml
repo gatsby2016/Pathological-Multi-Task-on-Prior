@@ -1,5 +1,5 @@
 CKPTS:
-  task: 'MTonP'  #'singleCls' or 'singleSeg' or 'MTwoP' or 'MTonP'
+  task: singleSeg  #'singleCls' or 'singleSeg' or 'MTwoP' or 'MTonP'
 
   modelckpts: '../models'
   resultpath: '../results'
@@ -10,13 +10,13 @@ TRAIN:
   lossAlpha: 1
   HyValidation: False
 
-  restore: '499.pkl'
+  restore: #'499.pkl'
   sync_bn: False  # adopt sync_bn or not
 #  aux_weight: 0.4
 
 
 CommonSettings:
-  epochs: 500
+  epochs: 200
   batch_size: 16
   base_lr: 0.002
 
@@ -26,8 +26,8 @@ CommonSettings:
 
 
 DATA:
-  train_root: '/home/cyyan/projects/MToPrior/data/mt2patch/train.txt'
-  val_root: '/home/cyyan/projects/MToPrior/data/mt2patch/test.txt'
+  train_root: '/home/cyyan/projects/MToPrior/data/mt2patchAugb/train.txt'
+  val_root: '/home/cyyan/projects/MToPrior/data/mt2patchAugb/test.txt'
   segCls: 2
   clsCls: 2
 
