@@ -7,26 +7,23 @@
 ![network](docs/network.png)
 
 ## Abstract   
-Adenocarcinoma is the most common cancer, the pathological diagnosis for it is of great significance. Specifically, the degree of gland differentiation is vital for defining the grade of adenocarcinoma. 
-Following this domain knowledge, we encode glandular regions as prior information in convolutional neural network (CNN), guiding the network's preference for glands when inferring. 
+Adenocarcinoma is the most common cancer, the pathological diagnosis for it is of great significance. Specifically, the degree of gland differentiation is vital for defining the grade of adenocarcinoma. Following this domain knowledge, we encode glandular regions as prior information in convolutional neural network (CNN), guiding the network's preference for glands when inferring.   
 
-In this work, we propose a prior-aware CNN framework with multi-task learning for pathological colon images analysis, which contains gland segmentation and grading classification branches simultaneously. The segmentation's probability map also acts as the spatial attention for grading, emphasizing the glandular tissue and removing noise of irrelevant parts.
+In this work, we propose **a prior-aware CNN framework with multi-task learning for pathological colon images analysis**, which contains gland segmentation and grading classification branches simultaneously. **The segmentation's probability map also acts as the spatial attention for grading, emphasizing the glandular tissue and removing noise of irrelevant parts**. 
 
 Experiments reveal that the proposed framework achieves accuracy of 97.04% and AUC of 0.9971 on grading. Meanwhile, our model can predict gland regions with mIoU of 0.8134. Importantly, it is based on the clinical-pathological diagnostic criteria of adenocarcinoma, which makes our model more interpretable.
 
 
 ## Highlights  
-- A prior-aware CNN framework with multi-task learning for pathological colon images analysis
-
-- The multi-task implementation for automatic gland segmentation and grading diagnosis
-
+- A prior-aware CNN framework with multi-task learning for pathological colon images analysis  
+- The multi-task implementation for automatic gland segmentation and grading diagnosis  
 - Tissue prior information transmission which based on the clinical pathological diagnostic criterion that acts as spatial attention for pathology-level interpretation
 
 
 ## Results  
 #### **Effectiveness of prior knowledge for grading**  
 
-We utilized [CAM](https://openaccess.thecvf.com/content_cvpr_2016/papers/Zhou_Learning_Deep_Features_CVPR_2016_paper.pdf) method to visualize attention maps of branch-C classifier，The figure below shows segmentation results, classification predictions and classifier’s attention maps of pathological images on MT-noP and MT-P models.
+We utilized [CAM](https://openaccess.thecvf.com/content_cvpr_2016/papers/Zhou_Learning_Deep_Features_CVPR_2016_paper.pdf) method to visualize attention maps of branch-C classifier, The figure below shows segmentation results, classification predictions and classifier’s attention maps of pathological images on MT-noP and MT-P models.
 ![vis](docs/vis.png)
 
 
